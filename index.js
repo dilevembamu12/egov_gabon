@@ -4,18 +4,15 @@ import express from 'express';
 import mysql from 'mysql2/promise';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import http from 'http'; // Module natif de Node.js
-import { WebSocketServer } from 'ws'; // Nouvelle importation
+import http from 'http';
+import { WebSocketServer, WebSocket } from 'ws';
 
 // Configuration de base pour Express
 const app = express();
 const PORT = process.env.PORT || 3000;
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Créer un serveur HTTP traditionnel qui utilise notre application Express
 const server = http.createServer(app);
-
-// Créer une instance de WebSocketServer et l'attacher à notre serveur HTTP
 const wss = new WebSocketServer({ server });
 
 app.use(express.json());
@@ -34,99 +31,71 @@ const dbPool = mysql.createPool({
     queueLimit: 0
 });
 
-// Gérer les connexions WebSocket (inchangé)
+// --- GESTION DES WEBSOCKETS (pour le dashboard) ---
 wss.on('connection', (ws) => {
     console.log('✅ Client WebSocket connecté au tableau de bord.');
-    
-    // NOUVEAU : Marquer la connexion comme vivante
     ws.isAlive = true;
-    ws.on('pong', () => {
-        ws.isAlive = true; // Le client a bien répondu au ping
-    });
-
+    ws.on('pong', () => { ws.isAlive = true; });
     ws.on('close', () => console.log('❌ Client WebSocket déconnecté.'));
-
-
 });
-// NOUVEAU : Intervalle de "Heartbeat" pour garder les connexions actives
+
 const interval = setInterval(() => {
     wss.clients.forEach((ws) => {
-        // Si le client n'a pas répondu au dernier ping, on considère la connexion comme morte.
-        if (ws.isAlive === false) {
-            console.log('Connexion WebSocket inactive terminée.');
-            return ws.terminate();
-        }
-
-        // Réinitialise le statut et envoie un ping.
+        if (ws.isAlive === false) return ws.terminate();
         ws.isAlive = false;
         ws.ping();
     });
-}, 30000); // Envoie un ping toutes les 30 secondes
-// Assurez-vous de nettoyer l'intervalle lorsque le serveur se ferme
-wss.on('close', () => {
-    clearInterval(interval);
-});
+}, 30000);
 
+wss.on('close', () => { clearInterval(interval); });
 
-
-// Fonction pour diffuser une nouvelle soumission (inchangée)
 function broadcastNewSubmission(submission) {
     const data = JSON.stringify(submission);
     wss.clients.forEach((client) => {
-        if (client.readyState === 1) { // 1 = WebSocket.OPEN
+        if (client.readyState === WebSocket.OPEN) {
             client.send(data);
         }
     });
 }
 
+// =====================================================
+// ==                  ROUTES DE L'APPLICATION        ==
+// =====================================================
 
+// --- NOUVELLE ROUTE : Page d'atterrissage (Landing Page) ---
+app.get('/', (req, res) => {
+    res.render('landing', { title: 'e-Gouv Gabon - Accueil' });
+});
 
-
-// Route principale pour afficher la liste des formulaires
-app.get('/', async (req, res) => {
+// --- ROUTE MODIFIÉE : Tableau de bord (Dashboard) ---
+app.get('/dashboard', async (req, res) => {
     let connection;
     try {
         connection = await dbPool.getConnection();
         const query = 'SELECT * FROM form_submissions ORDER BY created_at DESC';
         const [submissions] = await connection.execute(query);
-
-        // --- CORRECTIF PRINCIPAL ---
-        // On s'assure que la colonne `form_json` est bien un objet JavaScript
-        // avant de l'envoyer à la vue.
         const parsedSubmissions = submissions.map(sub => {
             try {
-                // Si form_json est une chaîne, on la parse. Sinon, on la laisse telle quelle.
-                if (typeof sub.form_json === 'string') {
-                    return { ...sub, form_json: JSON.parse(sub.form_json) };
-                }
-                return sub;
+                return { ...sub, form_json: typeof sub.form_json === 'string' ? JSON.parse(sub.form_json) : sub.form_json };
             } catch (e) {
-                console.error(`Impossible de parser le JSON pour l'ID ${sub.id}:`, sub.form_json);
-                // En cas d'erreur de format, on renvoie un objet d'erreur clair
-                return { ...sub, form_json: { "Erreur": "Format JSON invalide en base de données" } };
+                return { ...sub, form_json: { "Erreur": "Format JSON invalide" } };
             }
         });
-
-        res.render('submissions', {
-            title: 'Soumissions des Formulaires - eGouv',
-            submissions: parsedSubmissions // On utilise la version corrigée
+        res.render('dashboard', {
+            title: 'Dashboard - Suivi des Soumissions eGouv',
+            submissions: parsedSubmissions
         });
-
     } catch (error) {
         console.error("Erreur lors de la récupération des données:", error);
-        res.status(500).send("<h1>Erreur Serveur</h1><p>Impossible de récupérer les informations.</p>");
+        res.status(500).send("<h1>Erreur Serveur</h1>");
     } finally {
         if (connection) connection.release();
     }
 });
 
-// --- NOUVELLE ROUTE : POINT D'ENTRÉE POUR VOTRE CHATBOT ---
-// Votre chatbot doit maintenant envoyer les nouvelles soumissions à CETTE route.
+// --- ROUTES API (inchangées) ---
 app.post('/api/submissions', async (req, res) => {
-    const submissionData = req.body; // { service_title, wa_phoneNumber, etc. }
-
-    /*
-    // Logique d'insertion (peut être dans une fonction séparée)
+    const submissionData = req.body;
     const sql = `INSERT INTO form_submissions (service_title, wa_phoneNumber, wa_name, form_json, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW())`;
     const params = [
         submissionData.service_title,
@@ -135,29 +104,20 @@ app.post('/api/submissions', async (req, res) => {
         JSON.stringify(submissionData.form_json),
         submissionData.status || 'finalise'
     ];
-    */
-
     try {
-        //const [result] = await dbPool.execute(sql, params);
-        const newId = submissionData.insertId;
-
-        // Récupérer la ligne complète pour la diffuser
+        const [result] = await dbPool.execute(sql, params);
+        const newId = result.insertId;
         const [rows] = await dbPool.execute('SELECT * FROM form_submissions WHERE id = ?', [newId]);
-        const newSubmission = rows[0];
-
-        // Diffuser la nouvelle soumission à tous les clients du tableau de bord
-        if (newSubmission) {
-            broadcastNewSubmission(newSubmission);
+        if (rows[0]) {
+            broadcastNewSubmission(rows[0]);
         }
-
         res.status(201).json({ success: true, id: newId });
     } catch (error) {
-        console.error("Erreur lors de l'insertion de la soumission :", error);
+        console.error("Erreur lors de l'insertion :", error);
         res.status(500).json({ success: false, message: 'Erreur de base de données.' });
     }
 });
 
-// --- NOUVELLE ROUTE API POUR LA SYNCHRONISATION ---
 app.post('/api/sync/:id', async (req, res) => {
     const { id } = req.params;
     const syncDate = new Date();
@@ -166,22 +126,14 @@ app.post('/api/sync/:id', async (req, res) => {
         connection = await dbPool.getConnection();
         const query = 'UPDATE form_submissions SET synchronized_at = ? WHERE id = ?';
         const [result] = await connection.execute(query, [syncDate, id]);
-
         if (result.affectedRows === 0) {
             return res.status(404).json({ success: false, message: 'Soumission non trouvée.' });
         }
-
         await new Promise(resolve => setTimeout(resolve, 1500));
-
-        res.json({
-            success: true,
-            message: 'Synchronisation réussie !',
-            synchronized_at: syncDate.toISOString()
-        });
-
+        res.json({ success: true, synchronized_at: syncDate.toISOString() });
     } catch (error) {
-        console.error(`Erreur lors de la synchronisation pour l'ID ${id}:`, error);
-        res.status(500).json({ success: false, message: 'Erreur serveur lors de la synchronisation.' });
+        console.error(`Erreur de synchronisation pour l'ID ${id}:`, error);
+        res.status(500).json({ success: false, message: 'Erreur serveur.' });
     } finally {
         if (connection) connection.release();
     }
@@ -189,5 +141,8 @@ app.post('/api/sync/:id', async (req, res) => {
 
 // Démarrer le serveur HTTP unifié
 server.listen(PORT, () => {
-    console.log(`🚀 Serveur web et WebSocket démarrés sur http://localhost:${PORT}`);
+    console.log(`🚀 Serveur web démarré sur http://localhost:${PORT}`);
+    console.log(`➡️  Page d'accueil : http://localhost:${PORT}`);
+    console.log(`➡️  Dashboard      : http://localhost:${PORT}/dashboard`);
 });
+
