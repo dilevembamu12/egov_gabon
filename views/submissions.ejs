@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-clipboard-list"></i> Journal des Formulaires Soumis</h1>
+            <p>Liste de toutes les interactions enregistrées via le chatbot eGouv Gabon.</p>
+        </header>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Service</th>
+                        <th>Utilisateur</th>
+                        <th>Statut</th>
+                        <th>Créé le</th>
+                        <th>Vérifié le</th>
+                        <th>Synchronisé le</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="submissions-tbody">
+                    <% if (submissions.length > 0) { %>
+                        <% submissions.forEach(submission => { %>
+                            <tr id="row-<%= submission.id %>">
+                                <td><%= submission.id %></td>
+                                <td class="service-title"><%= submission.service_title %></td>
+                                <td class="user-info">
+                                    <strong><%= submission.wa_name || 'N/A' %></strong><br>
+                                    <span><%= submission.wa_phoneNumber %></span>
+                                </td>
+                                <td><span class="status status-<%= submission.status %>"><%= submission.status %></span></td>
+                                <td><%= new Date(submission.created_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) %></td>
+                                <td class="verified-cell"><%= submission.verified_at ? new Date(submission.verified_at).toLocaleString('fr-FR', { dateStyle: 'short' }) : '---' %></td>
+                                <td class="sync-cell"><%= submission.synchronized_at ? new Date(submission.synchronized_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '---' %></td>
+                                <td class="actions">
+                                    <button class="btn btn-view" onclick="viewSubmission(this)" data-form="<%= JSON.stringify(submission.form_json).replace(/"/g, '&quot;') %>" data-title="<%= submission.service_title %>">
+                                        <i class="fas fa-eye"></i> Voir
+                                    </button>
+                                    <button class="btn btn-sync" onclick="syncSubmission(this, <%= submission.id %>)" <%= submission.synchronized_at ? 'disabled' : '' %>>
+                                        <i class="fas fa-sync-alt"></i>
+                                        <span class="btn-text"><%= submission.synchronized_at ? 'Synchronisé' : 'Synchroniser' %></span>
+                                    </button>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="8" class="no-data">Aucun formulaire n'a été enregistré pour le moment.</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Fenêtre Modale pour la Visualisation -->
+    <div id="viewModal" class="modal">
+        <div class="modal-content">
+            <header class="modal-header">
+                <h2 id="modalTitle">Détails de la Soumission</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </header>
+            <div id="modalBody" class="modal-body">
+                <!-- Le contenu du formulaire sera injecté ici par JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Conteneur pour les notifications Toast -->
+    <div id="toast-container"></div>
+
+    <!-- Élément audio pour la notification sonore -->
+    <audio id="notification-sound" src="/audio/notification.mp3" preload="auto"></audio>
+
+    <div id="welcomeModal" class="welcome-modal">
+        <div class="modal-overlay"></div>
+        <div class="welcome-modal-content">
+            <h2>Bienvenue sur le Tableau de Logs de soumission eGouv</h2>
+            <p>Ce tableau de bord se met à jour en temps réel en fonction des nouvelles soumissions de la population. veuillez cliquer sur "OK".</p>
+            <button id="okButton" class="btn btn-ok">OK</button>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById('viewModal');
+
+        const tbody = document.getElementById('submissions-tbody');
+
+        // NOUVEAU : Références pour la modale de bienvenue et le son
+        const welcomeModal = document.getElementById('welcomeModal');
+        const okButton = document.getElementById('okButton');
+        const notificationSound = document.getElementById('notification-sound');
+        let isAudioEnabled = false; // Le son est désactivé au démarrage
+
+        // Affiche la modale de bienvenue dès que la page est chargée
+        window.addEventListener('DOMContentLoaded', () => {
+            welcomeModal.style.display = 'flex';
+        });
+
+        // Gère le clic sur le bouton "OK" de la modale de bienvenue
+        okButton.addEventListener('click', () => {
+            // 1. C'est l'interaction utilisateur qui débloque l'audio pour le navigateur !
+            // On joue et on met en pause immédiatement pour ne pas entendre le son,
+            // mais pour obtenir la permission du navigateur.
+            notificationSound.play().then(() => {
+                notificationSound.pause();
+                notificationSound.currentTime = 0; // Rembobine pour la prochaine notification
+            }).catch(e => {
+                console.warn("L'audio n'a pas pu être débloqué. Une autre interaction pourrait être nécessaire.", e);
+            });
+
+            // 2. On active les notifications sonores pour le reste de la session
+            isAudioEnabled = true;
+            
+            // 3. On cache la fenêtre modale
+            welcomeModal.style.display = 'none';
+
+            // Optionnel : Confirmer à l'utilisateur que c'est activé
+            showToast("Notifications sonores activées.");
+        });
+
+
+        // --- GESTION DE LA CONNEXION WEBSOCKET ---
+        const ws = new WebSocket(`ws://${window.location.host}`);
+
+        ws.onopen = () => {
+            console.log('Connecté au serveur WebSocket.');
+        };
+
+        ws.onmessage = (event) => {
+            const submission = JSON.parse(event.data);
+            console.log('Nouvelle soumission reçue:', submission);
+            
+            // 1. Ajouter la nouvelle ligne au tableau avec surbrillance
+            prependNewSubmission(submission);
+            
+            // 2. Afficher la notification toast
+            showToast(`Nouvelle soumission de ${submission.wa_name || 'N/A'} pour le service "${submission.service_title}"`);
+            
+            // 3. Jouer le son de notification
+            document.getElementById('notification-sound').play().catch(e => console.error("La lecture auto du son a été bloquée par le navigateur:", e));
+        };
+
+        ws.onclose = () => {
+            console.log('Déconnecté du serveur WebSocket. Tentative de reconnexion...');
+            setTimeout(() => { window.location.reload(); }, 5000);
+        };
+        
+        // --- FONCTIONS HELPERS ---
+
+        function prependNewSubmission(submission) {
+            // Supprimer la ligne "Aucune donnée" si elle existe
+            const noDataRow = document.getElementById('no-data-row');
+            if (noDataRow) {
+                noDataRow.remove();
+            }
+
+            const newRow = document.createElement('tr');
+            newRow.id = `row-${submission.id}`;
+            newRow.classList.add('new-submission'); // Classe pour la surbrillance
+
+            // Convertir les données JSON en objet si c'est une chaîne
+            let formJson = submission.form_json;
+            if(typeof formJson === 'string') {
+                try { formJson = JSON.parse(formJson); } catch(e) { formJson = {"Erreur": "JSON Invalide"}; }
+            }
+            const formJsonString = JSON.stringify(formJson).replace(/"/g, '&quot;');
+            
+            newRow.innerHTML = `
+                <td>${submission.id}</td>
+                <td class="service-title">${submission.service_title}</td>
+                <td class="user-info">
+                    <strong>${submission.wa_name || 'N/A'}</strong><br>
+                    <span>${submission.wa_phoneNumber}</span>
+                </td>
+                <td><span class="status status-${submission.status}">${submission.status}</span></td>
+                <td>${new Date(submission.created_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</td>
+                <td class="verified-cell">${submission.verified_at ? new Date(submission.verified_at).toLocaleString('fr-FR', { dateStyle: 'short' }) : '---'}</td>
+                <td class="sync-cell">${submission.synchronized_at ? new Date(submission.synchronized_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '---'}</td>
+                <td class="actions">
+                    <button class="btn btn-view" onclick="viewSubmission(this)" data-form="${formJsonString}" data-title="${submission.service_title}">
+                        <i class="fas fa-eye"></i> Voir
+                    </button>
+                    <button class="btn btn-sync" onclick="syncSubmission(this, ${submission.id})">
+                        <i class="fas fa-sync-alt"></i>
+                        <span class="btn-text">Synchroniser</span>
+                    </button>
+                </td>
+            `;
+
+            tbody.insertBefore(newRow, tbody.firstChild);
+
+            // Supprimer la classe de surbrillance après 5 secondes
+            setTimeout(() => {
+                newRow.classList.remove('new-submission');
+            }, 5000);
+        }
+
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast show';
+            toast.innerHTML = `<i class="fas fa-check-circle"></i> ${message}`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+                toast.classList.add('hide');
+                toast.addEventListener('transitionend', () => toast.remove());
+            }, 4000); // La notification disparaît après 4 secondes
+        }
+
+
+        // --- GESTION DE LA MODALE "VOIR" (AMÉLIORÉE) ---
+        function viewSubmission(button) {
+            // 1. Récupérer la chaîne de caractères encodée
+            const encodedString = button.getAttribute('data-form');
+
+            // 2. Décoder la chaîne en remplaçant &quot; par "
+            const decodedString = encodedString.replace(/&quot;/g, '"');
+            
+            // 3. Parser la chaîne maintenant correcte
+            const formData = JSON.parse(decodedString);
+
+            // Le reste de la fonction est inchangé
+            const serviceTitle = button.getAttribute('data-title');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalBody = document.getElementById('modalBody');
+
+            modalTitle.innerText = `Détails pour : ${serviceTitle}`;
+            
+            let htmlContent = '<div class="form-details">';
+            for (const [key, value] of Object.entries(formData)) {
+                htmlContent += `
+                    <div class="detail-row">
+                        <strong class="detail-key">${key.replace(/_/g, ' ')}</strong>
+                        <span class="detail-value">${value}</span>
+                    </div>
+                `;
+            }
+            htmlContent += '</div>';
+
+            modalBody.innerHTML = htmlContent;
+            modal.style.display = 'block';
+        }
+
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        // --- GESTION DU BOUTON "SYNCHRONISER" ---
+        async function syncSubmission(button, submissionId) {
+            // ... (Cette fonction reste identique)
+            const btnText = button.querySelector('.btn-text');
+            const icon = button.querySelector('i');
+            const row = document.getElementById(`row-${submissionId}`);
+            const syncCell = row.querySelector('.sync-cell');
+
+            button.disabled = true;
+            btnText.textContent = 'En cours...';
+            icon.classList.add('fa-spin');
+
+            try {
+                const response = await fetch(`/api/sync/${submissionId}`, { method: 'POST' });
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || 'Erreur inconnue');
+                }
+
+                icon.classList.remove('fa-spin');
+                icon.classList.remove('fa-sync-alt');
+                icon.classList.add('fa-check-circle');
+                button.classList.add('btn-success');
+                btnText.textContent = 'Synchronisé';
+
+                const syncDate = new Date(result.synchronized_at);
+                syncCell.textContent = syncDate.toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
+
+            } catch (error) {
+                console.error('Erreur de synchronisation:', error);
+                icon.classList.remove('fa-spin');
+                icon.classList.remove('fa-sync-alt');
+                icon.classList.add('fa-times-circle');
+                button.classList.add('btn-error');
+                btnText.textContent = 'Échec';
+
+                setTimeout(() => {
+                    button.disabled = false;
+                    button.classList.remove('btn-error');
+                    icon.classList.remove('fa-times-circle');
+                    icon.classList.add('fa-sync-alt');
+                    btnText.textContent = 'Synchroniser';
+                }, 3000);
+            }
+        }
+    </script>
+</body>
+</html>
+
