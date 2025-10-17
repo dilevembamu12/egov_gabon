@@ -95,7 +95,10 @@ app.get('/dashboard', async (req, res) => {
 
 // --- ROUTES API (inchangées) ---
 app.post('/api/submissions', async (req, res) => {
-    const submissionData = req.body;
+    const submissionData = req.body; // { service_title, wa_phoneNumber, etc. }
+
+    /*
+    // Logique d'insertion (peut être dans une fonction séparée)
     const sql = `INSERT INTO form_submissions (service_title, wa_phoneNumber, wa_name, form_json, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW())`;
     const params = [
         submissionData.service_title,
@@ -104,16 +107,24 @@ app.post('/api/submissions', async (req, res) => {
         JSON.stringify(submissionData.form_json),
         submissionData.status || 'finalise'
     ];
+    */
+
     try {
-        const [result] = await dbPool.execute(sql, params);
-        const newId = result.insertId;
+        //const [result] = await dbPool.execute(sql, params);
+        const newId = submissionData.insertId;
+
+        // Récupérer la ligne complète pour la diffuser
         const [rows] = await dbPool.execute('SELECT * FROM form_submissions WHERE id = ?', [newId]);
-        if (rows[0]) {
-            broadcastNewSubmission(rows[0]);
+        const newSubmission = rows[0];
+
+        // Diffuser la nouvelle soumission à tous les clients du tableau de bord
+        if (newSubmission) {
+            broadcastNewSubmission(newSubmission);
         }
+
         res.status(201).json({ success: true, id: newId });
     } catch (error) {
-        console.error("Erreur lors de l'insertion :", error);
+        console.error("Erreur lors de l'insertion de la soumission :", error);
         res.status(500).json({ success: false, message: 'Erreur de base de données.' });
     }
 });
