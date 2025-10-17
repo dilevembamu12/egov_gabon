@@ -37,8 +37,37 @@ const dbPool = mysql.createPool({
 // Gérer les connexions WebSocket (inchangé)
 wss.on('connection', (ws) => {
     console.log('✅ Client WebSocket connecté au tableau de bord.');
+    
+    // NOUVEAU : Marquer la connexion comme vivante
+    ws.isAlive = true;
+    ws.on('pong', () => {
+        ws.isAlive = true; // Le client a bien répondu au ping
+    });
+
     ws.on('close', () => console.log('❌ Client WebSocket déconnecté.'));
+
+
 });
+// NOUVEAU : Intervalle de "Heartbeat" pour garder les connexions actives
+const interval = setInterval(() => {
+    wss.clients.forEach((ws) => {
+        // Si le client n'a pas répondu au dernier ping, on considère la connexion comme morte.
+        if (ws.isAlive === false) {
+            console.log('Connexion WebSocket inactive terminée.');
+            return ws.terminate();
+        }
+
+        // Réinitialise le statut et envoie un ping.
+        ws.isAlive = false;
+        ws.ping();
+    });
+}, 30000); // Envoie un ping toutes les 30 secondes
+// Assurez-vous de nettoyer l'intervalle lorsque le serveur se ferme
+wss.on('close', () => {
+    clearInterval(interval);
+});
+
+
 
 // Fonction pour diffuser une nouvelle soumission (inchangée)
 function broadcastNewSubmission(submission) {
