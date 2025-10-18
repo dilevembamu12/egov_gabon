@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= service.title %> - eGouv Gabon</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <link rel="stylesheet" href="/css/form-style.css">
+</head>
+<body class="antialiased">
+
+    <div class="container mx-auto px-4 py-8">
+        <div class="mb-10 text-center">
+            <i class="fas <%= service.icon %> text-5xl text-blue-400 mb-4"></i>
+            <h1 class="text-4xl lg:text-5xl font-bold text-white mb-2"><%= service.title %></h1>
+            <p class="text-gray-400">Remplissez les champs et visualisez le document en temps réel.</p>
+        </div>
+
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- Document Preview Section -->
+            <div class="document-preview-card w-full lg:w-3/5 rounded-lg p-4">
+                <div class="certificate-container">
+                    <img src="/img/coat_of_arms.jpg" class="watermark" alt="Armoiries du Gabon">
+                    <div class="certificate-border">
+                        <!-- Le squelette de l'aperçu sera injecté ici -->
+                        <%- service.preview_html %>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Section -->
+            <div class="form-card w-full lg:w-2/5 rounded-lg p-6 sm:p-8">
+                <form id="dynamic-form">
+                    <% service.fields.forEach(field => { %>
+                        <div class="mb-6">
+                            <label for="<%= field.id %>" class="form-label block mb-2 text-sm font-medium">
+                                <%= field.label %>
+                                <% if (field.required) { %><span class="text-red-500">*</span><% } %>
+                            </label>
+                            <% if (field.type === 'select') { %>
+                                <select id="<%= field.id %>" name="<%= field.id %>" class="form-select w-full p-2.5 rounded-md" data-target="<%= field.preview_id %>" <%= field.required ? 'required' : '' %>>
+                                    <option value="">-- Veuillez choisir --</option>
+                                    <% field.options.forEach(option => { %>
+                                        <option value="<%= option %>"><%= option %></option>
+                                    <% }); %>
+                                </select>
+                            <% } else if (field.type === 'textarea') { %>
+                                <textarea id="<%= field.id %>" name="<%= field.id %>" rows="4" class="form-textarea w-full p-2.5 rounded-md" placeholder="<%= field.exemple || '' %>" data-target="<%= field.preview_id %>" <%= field.required ? 'required' : '' %>></textarea>
+                            <% } else { %>
+                                <input type="<%= field.type %>" id="<%= field.id %>" name="<%= field.id %>" class="form-input w-full p-2.5 rounded-md" placeholder="<%= field.exemple || '' %>" data-target="<%= field.preview_id %>" <%= field.required ? 'required' : '' %> <%= field.pattern ? `pattern="${field.pattern}"` : '' %>>
+                            <% } %>
+                        </div>
+                    <% }); %>
+                    <div class="mt-8 pt-6 border-t border-gray-700 flex justify-end gap-4">
+                        <a href="/" class="btn-secondary font-bold py-3 px-6 rounded-md">Retour au portail</a>
+                        <button type="submit" class="btn-primary font-bold py-3 px-6 rounded-md">Soumettre la demande</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const allInputs = document.querySelectorAll('.form-card input, .form-card select, .form-card textarea');
+            
+            allInputs.forEach(input => {
+                input.addEventListener('input', () => {
+                    const targetId = input.dataset.target;
+                    const previewElement = document.getElementById(targetId);
+
+                    if (previewElement) {
+                        let value = input.value;
+                        
+                        if (value) {
+                             if (previewElement.firstChild?.classList?.contains('placeholder')) {
+                                previewElement.innerHTML = ''; 
+                            }
+                            if (input.type === 'date') {
+                                try {
+                                    const date = new Date(value);
+                                    previewElement.textContent = date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+                                } catch (e) {
+                                    previewElement.textContent = value;
+                                }
+                            } else {
+                                previewElement.textContent = value;
+                            }
+                        } else {
+                            const label = document.querySelector(`label[for='${input.id}']`);
+                            const placeholderText = label ? `[${label.textContent.replace('*', '').trim()}]` : '[Valeur]';
+                            previewElement.innerHTML = `<span class="placeholder">${placeholderText}</span>`;
+                        }
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+

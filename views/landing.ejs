@@ -21,10 +21,10 @@
 
     <!-- Header Section -->
     <header class="bg-white shadow-sm sticky top-0 z-50">
-        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <img src="https://placehold.co/40x40/007044/FFFFFF?text=EG" alt="Logo e-Gouv Gabon" class="rounded-full">
-                <a href="#" class="text-2xl font-bold text-gray-800" onclick="showMainPage(event)">e-Gouv <span class="text-green-600">Gabon</span></a>
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <img src="/img/coat_of_arms.jpg" alt="Armoiries du Gabon" class="h-12 w-auto">
+                <a href="/" class="text-2xl font-bold text-gray-800">e-Gouv <span class="text-green-600">Gabon</span></a>
             </div>
             <div id="desktop-menu" class="hidden md:flex items-center space-x-8">
                 <a href="#categories" class="text-gray-600 hover:text-green-600 font-medium">Services</a>
@@ -41,7 +41,6 @@
              <a href="#" class="block bg-green-600 text-white font-semibold px-5 py-2 rounded-lg mt-2 text-center"><i class="fas fa-user mr-2"></i>Mon Espace</a>
         </div>
     </header>
-
     <main>
         <!-- ===================================================== -->
         <!-- ==              VUE PRINCIPALE                     == -->
@@ -61,6 +60,7 @@
                 </div>
             </section>
 
+            
             <!-- Categories Section -->
             <section id="categories" class="py-20 bg-white">
                 <div class="container mx-auto px-6">
@@ -68,55 +68,17 @@
                         <h2 class="text-3xl md:text-4xl font-bold text-gray-800">Catégories de services</h2>
                         <p class="text-gray-600 mt-2 max-w-2xl mx-auto">Commencez par choisir une catégorie pour trouver votre démarche.</p>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        <!-- Category Card -->
-                        <div onclick="showServices('citoyennete_justice')" class="group bg-gray-50 p-8 rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 cursor-pointer text-center">
-                            <div class="bg-green-100 text-green-600 inline-block p-5 rounded-full mb-4 group-hover:bg-green-600 group-hover:text-white transition-colors">
-                                <i class="fas fa-users fa-3x"></i>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                        <% for (const key in categories) { %>
+                            <% const category = categories[key]; %>
+                            <div onclick="showServices('<%= key %>')" class="group bg-gray-50 p-8 rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 cursor-pointer text-center">
+                                <div class="bg-<%= category.color %>-100 text-<%= category.color %>-600 inline-block p-5 rounded-full mb-4 group-hover:bg-<%= category.color %>-600 group-hover:text-white transition-colors">
+                                    <i class="fas <%= category.icon %> fa-3x"></i>
+                                </div>
+                                <h3 class="text-xl font-bold mb-2"><%= category.title %></h3>
+                                <p class="text-gray-600"><%= category.desc %></p>
                             </div>
-                            <h3 class="text-xl font-bold mb-2">Citoyenneté & Justice</h3>
-                            <p class="text-gray-600">Passeport, CNI, état civil, casier judiciaire...</p>
-                        </div>
-                        <!-- Category Card -->
-                        <div onclick="showServices('transport_vehicules')" class="group bg-gray-50 p-8 rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 cursor-pointer text-center">
-                            <div class="bg-blue-100 text-blue-800 inline-block p-5 rounded-full mb-4 group-hover:bg-blue-800 group-hover:text-white transition-colors">
-                                <i class="fas fa-car fa-3x"></i>
-                            </div>
-                            <h3 class="text-xl font-bold mb-2">Transport & Véhicules</h3>
-                            <p class="text-gray-600">Carte grise, permis, contrôle technique...</p>
-                        </div>
-                        <!-- Category Card -->
-                        <div onclick="showServices('economie_finances')" class="group bg-gray-50 p-8 rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 cursor-pointer text-center">
-                            <div class="bg-purple-100 text-purple-600 inline-block p-5 rounded-full mb-4 group-hover:bg-purple-600 group-hover:text-white transition-colors">
-                                <i class="fas fa-briefcase fa-3x"></i>
-                            </div>
-                            <h3 class="text-xl font-bold mb-2">Économie & Finances</h3>
-                            <p class="text-gray-600">Création d'entreprise, impôts, NIF...</p>
-                        </div>
-                         <!-- Category Card -->
-                        <div onclick="showServices('education_sante')" class="group bg-gray-50 p-8 rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 cursor-pointer text-center">
-                            <div class="bg-teal-100 text-teal-600 inline-block p-5 rounded-full mb-4 group-hover:bg-teal-600 group-hover:text-white transition-colors">
-                                <i class="fas fa-graduation-cap fa-3x"></i>
-                            </div>
-                            <h3 class="text-xl font-bold mb-2">Éducation & Santé</h3>
-                            <p class="text-gray-600">Inscriptions, examens, carnet de santé...</p>
-                        </div>
-                        <!-- Category Card -->
-                        <div onclick="showServices('defense_securite')" class="group bg-gray-50 p-8 rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 cursor-pointer text-center">
-                            <div class="bg-gray-700 text-white inline-block p-5 rounded-full mb-4 group-hover:bg-gray-800 transition-colors">
-                                <i class="fas fa-shield-alt fa-3x"></i>
-                            </div>
-                            <h3 class="text-xl font-bold mb-2">Défense & Sécurité</h3>
-                            <p class="text-gray-600">Recrutement, position militaire...</p>
-                        </div>
-                        <!-- Category Card -->
-                        <div onclick="showServices('autres_services')" class="group bg-gray-50 p-8 rounded-xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 cursor-pointer text-center">
-                            <div class="bg-orange-100 text-orange-600 inline-block p-5 rounded-full mb-4 group-hover:bg-orange-600 group-hover:text-white transition-colors">
-                                <i class="fas fa-cogs fa-3x"></i>
-                            </div>
-                            <h3 class="text-xl font-bold mb-2">Autres Secteurs</h3>
-                            <p class="text-gray-600">Numérique, environnement, pétrole...</p>
-                        </div>
+                        <% } %>
                     </div>
                 </div>
             </section>
@@ -183,8 +145,8 @@
                 </div>
                 <div>
                     <h3 class="text-lg font-bold mb-4">Contact</h3>
-                    <p class="text-gray-400"><i class="fas fa-phone mr-2"></i> +241 11 22 33 44</p>
-                    <p class="text-gray-400"><i class="fas fa-envelope mr-2"></i> contact@egouv.ga</p>
+                    <p class="text-gray-400"><i class="fas fa-phone mr-2"></i> +241 07 88 31 06</p>
+                    <p class="text-gray-400"><i class="fas fa-envelope mr-2"></i> contact@service-public-gouv.ga</p>
                 </div>
             </div>
             <div class="mt-8 border-t border-gray-700 pt-6 text-center text-gray-500">
@@ -231,71 +193,50 @@
         const searchInput = document.getElementById('searchInput');
         const searchButton = document.getElementById('searchButton');
 
-        // --- Base de données complète des services ---
-        const servicesData = {
-            citoyennete_justice: {
-                title: 'Citoyenneté & Justice',
-                services: [
-                    { icon: 'fa-passport', color: 'blue', title: 'Demande de Passeport', desc: 'Obtenez ou renouvelez votre passeport biométrique.' },
-                    { icon: 'fa-id-card', color: 'blue', title: 'Carte d\'Identité Nationale', desc: 'Première demande ou renouvellement de votre CNI.' },
-                    { icon: 'fa-baby', color: 'blue', title: 'Actes d\'État Civil', desc: 'Demandez vos actes de naissance, mariage ou décès.' },
-                    { icon: 'fa-gavel', color: 'red', title: 'Casier Judiciaire', desc: 'Obtenez un extrait (Bulletin n°3).' },
-                    { icon: 'fa-file-signature', color: 'blue', title: 'Autorisation de Sortie', desc: 'Demande d\'autorisation de sortie du territoire pour mineur.' },
-                ]
-            },
-            transport_vehicules: {
-                title: 'Transport & Véhicules',
-                services: [
-                    { icon: 'fa-car', color: 'green', title: 'Immatriculation Véhicule', desc: 'Obtenez la première carte grise pour un véhicule neuf ou importé.' },
-                    { icon: 'fa-id-card-alt', color: 'green', title: 'Renouvellement Carte Grise', desc: 'Mettez à jour votre certificat d\'immatriculation ou demandez un duplicata.' },
-                    { icon: 'fa-exchange-alt', color: 'green', title: 'Transfert De Propriété', desc: 'Effectuez le changement de propriétaire d\'un véhicule d\'occasion.' },
-                    { icon: 'fa-address-card', color: 'blue', title: 'Permis De Conduire Numérique', desc: 'Effectuez votre première demande pour un permis de conduire sécurisé.' },
-                    { icon: 'fa-sync', color: 'blue', title: 'Renouvellement Permis', desc: 'Renouvelez votre permis de conduire arrivé à expiration.' },
-                    { icon: 'fa-road', color: 'yellow', title: 'Vignette & Taxe Routière', desc: 'Payez votre vignette annuelle et les taxes associées au transport.' },
-                    { icon: 'fa-receipt', color: 'red', title: 'Paiement Amendes Routières', desc: 'Réglez vos contraventions et amendes de circulation en ligne.' },
-                    { icon: 'fa-parking', color: 'blue', title: 'Permis De Stationnement', desc: 'Obtenez une autorisation de stationnement pour des zones réglementées.' },
-                    { icon: 'fa-bus', color: 'purple', title: 'Autorisation Transport Public', desc: 'Demandez ou renouvelez une licence pour le transport de passagers.' },
-                    { icon: 'fa-truck', color: 'purple', title: 'Suivi Fret & Logistique', desc: 'Suivez le statut de vos marchandises et dossiers de fret.' },
-                    { icon: 'fa-wrench', color: 'gray', title: 'Contrôle Technique', desc: 'Prenez rendez-vous pour la visite technique de votre véhicule.' },
-                    { icon: 'fa-book', color: 'gray', title: 'Journal Des Transactions', desc: 'Consultez l\'historique de tous vos paiements effectués sur la plateforme.' },
-                ]
-            },
-            economie_finances: {
-                title: 'Économie & Finances',
-                services: [
-                    { icon: 'fa-building', color: 'purple', title: 'Création d\'Entreprise', desc: 'Enregistrez votre nouvelle entreprise (personne morale ou physique).' },
-                    { icon: 'fa-id-badge', color: 'purple', title: 'Numéro d\'Identification Fiscale', desc: 'Obtenez votre NIF pour vos activités économiques.' },
-                    { icon: 'fa-file-invoice-dollar', color: 'indigo', title: 'Déclaration d\'Impôts', desc: 'Déclarez et payez vos impôts sur le revenu ou sur les sociétés.' },
-                    { icon: 'fa-cash-register', color: 'indigo', title: 'Paiement de Taxes', desc: 'Réglez diverses taxes et redevances administratives.' },
-                ]
-            },
-            education_sante: {
-                title: 'Éducation & Santé',
-                services: [
-                    { icon: 'fa-school', color: 'green', title: 'Inscription Scolaire & Universitaire', desc: 'Inscrivez vos enfants ou vous-même dans les établissements publics.' },
-                    { icon: 'fa-user-graduate', color: 'green', title: 'Résultats d\'Examens Nationaux', desc: 'Consultez les résultats du BEPC, Baccalauréat, etc.' },
-                    { icon: 'fa-hospital-user', color: 'teal', title: 'Prise de Rendez-vous Hôpital', desc: 'Prenez rendez-vous dans un centre de santé public.' },
-                    { icon: 'fa-syringe', color: 'teal', title: 'Carnet de Vaccination Numérique', desc: 'Accédez à votre historique de vaccination et aux certificats.' },
-                ]
-            },
-            defense_securite: {
-                title: 'Défense & Sécurité',
-                services: [
-                    { icon: 'fa-user-shield', color: 'gray', title: 'Inscription aux Concours', desc: 'Postulez aux concours de l\'armée, gendarmerie et police.' },
-                    { icon: 'fa-file-alt', color: 'gray', title: 'Certificat de Position Militaire', desc: 'Demandez votre certificat pour les démarches administratives.' },
-                ]
-            },
-            autres_services: {
-                title: 'Autres Secteurs Spécifiques',
-                services: [
-                    { icon: 'fa-laptop-code', color: 'orange', title: 'Enregistrement de Startup', desc: 'Services dédiés aux innovateurs de l\'économie numérique.' },
-                    { icon: 'fa-leaf', color: 'green', title: 'Permis Environnemental', desc: 'Demandes relatives aux projets à impact environnemental.' },
-                    { icon: 'fa-gas-pump', color: 'black', title: 'Licences (Pétrole & Gaz)', desc: 'Procédures pour les opérateurs du secteur pétrolier.' },
-                ]
-            }
-        };
+        // --- Base de données des services injectée par le serveur ---
+        const servicesData = <%- JSON.stringify(servicesData) %>;
 
-        // --- Logique de recherche ---
+        // --- Le reste du script est identique ---
+        let selectedServiceKey = '';
+        let selectedServiceTitle = '';
+
+        function showServices(categoryKey) {
+            const categoryTitleEl = document.querySelector(`div[onclick="showServices('${categoryKey}')"] h3`);
+            const categoryTitle = categoryTitleEl ? categoryTitleEl.textContent : "Services";
+            servicesTitle.innerText = categoryTitle;
+
+            servicesList.innerHTML = '';
+            
+            let servicesFound = false;
+            for (const key in servicesData) {
+                const service = servicesData[key];
+                if (service.categoryKey === categoryKey) {
+                    servicesFound = true;
+                    const serviceCard = `
+                        <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col items-start">
+                            <div class="bg-${service.color}-100 text-${service.color}-600 p-4 rounded-full mb-4">
+                                <i class="fas ${service.icon} fa-2x"></i>
+                            </div>
+                            <h3 class="text-lg font-bold mb-2">${service.title}</h3>
+                            <p class="text-gray-600 text-sm mb-6 flex-grow">${service.desc}</p>
+                            <button onclick="openChoiceModal('`+key.replace(/['"]/g, '\\$&')+`', '`+service.title.replace(/['"]/g, '\\$&')+`')" class="mt-auto bg-gray-800 text-white font-semibold px-5 py-2 rounded-lg hover:bg-gray-900 transition duration-300 self-end text-sm">
+                                Accéder au service
+                            </button>
+                        </div>
+                    `;
+                    servicesList.innerHTML += serviceCard;
+                }
+            }
+
+            if (!servicesFound) {
+                 servicesList.innerHTML = `<p class="col-span-full text-center text-gray-500">Aucun service n'est encore défini pour cette catégorie.</p>`;
+            }
+
+            mainPage.classList.add('hidden');
+            servicesPage.classList.remove('hidden');
+            window.scrollTo(0, 0);
+        }
+
         function handleSearch() {
             const searchTerm = searchInput.value.trim().toLowerCase();
             if (searchTerm.length < 2) {
@@ -304,22 +245,20 @@
             }
 
             const results = [];
-            for (const categoryKey in servicesData) {
-                servicesData[categoryKey].services.forEach(service => {
-                    const titleMatch = service.title.toLowerCase().includes(searchTerm);
-                    const descMatch = service.desc.toLowerCase().includes(searchTerm);
-                    if (titleMatch || descMatch) {
-                        results.push(service);
-                    }
-                });
+            for (const key in servicesData) {
+                const service = servicesData[key];
+                const titleMatch = service.title.toLowerCase().includes(searchTerm);
+                const descMatch = service.desc.toLowerCase().includes(searchTerm);
+                if (titleMatch || descMatch) {
+                    results.push({ key, ...service });
+                }
             }
-
             displaySearchResults(results, searchTerm);
         }
 
         function displaySearchResults(results, term) {
             servicesTitle.innerText = `Résultats pour "${term}"`;
-            servicesList.innerHTML = ''; // Clear previous results
+            servicesList.innerHTML = ''; 
 
             if (results.length === 0) {
                 servicesList.innerHTML = `<p class="col-span-full text-center text-gray-500">Aucun service trouvé pour votre recherche.</p>`;
@@ -332,7 +271,7 @@
                             </div>
                             <h3 class="text-lg font-bold mb-2">${service.title}</h3>
                             <p class="text-gray-600 text-sm mb-6 flex-grow">${service.desc}</p>
-                            <button onclick="openChoiceModal('${service.title}')" class="mt-auto bg-gray-800 text-white font-semibold px-5 py-2 rounded-lg hover:bg-gray-900 transition duration-300 self-end text-sm">
+                            <button onclick="openChoiceModal('`+service.key.replace(/['"]/g, '\\$&')+`', '`+service.title.replace(/['"]/g, '\\$&')+`')" class="mt-auto bg-gray-800 text-white font-semibold px-5 py-2 rounded-lg hover:bg-gray-900 transition duration-300 self-end text-sm">
                                 Accéder au service
                             </button>
                         </div>
@@ -345,36 +284,7 @@
             servicesPage.classList.remove('hidden');
             window.scrollTo(0, 0);
         }
-
-
-        // --- Logique de navigation & Modals ---
-        let selectedServiceTitle = '';
-
-        function showServices(categoryKey) {
-            const category = servicesData[categoryKey];
-            if (!category) return;
-            servicesTitle.innerText = category.title;
-            servicesList.innerHTML = '';
-            category.services.forEach(service => {
-                const serviceCard = `
-                    <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-xl hover:-translate-y-2 transition-all duration-300 flex flex-col items-start">
-                        <div class="bg-${service.color}-100 text-${service.color}-600 p-4 rounded-full mb-4">
-                            <i class="fas ${service.icon} fa-2x"></i>
-                        </div>
-                        <h3 class="text-lg font-bold mb-2">${service.title}</h3>
-                        <p class="text-gray-600 text-sm mb-6 flex-grow">${service.desc}</p>
-                        <button onclick="openChoiceModal('${service.title}')" class="mt-auto bg-gray-800 text-white font-semibold px-5 py-2 rounded-lg hover:bg-gray-900 transition duration-300 self-end text-sm">
-                            Accéder au service
-                        </button>
-                    </div>
-                `;
-                servicesList.innerHTML += serviceCard;
-            });
-            mainPage.classList.add('hidden');
-            servicesPage.classList.remove('hidden');
-            window.scrollTo(0, 0);
-        }
-
+        
         function showMainPage(event) {
             if (event) event.preventDefault();
             servicesPage.classList.add('hidden');
@@ -382,7 +292,8 @@
             window.scrollTo(0, 0);
         }
 
-        function openChoiceModal(serviceTitle) {
+        function openChoiceModal(serviceKey, serviceTitle) {
+            selectedServiceKey = serviceKey; 
             selectedServiceTitle = serviceTitle;
             const modalTitle = document.getElementById('choiceModalTitle');
             modalTitle.innerText = `Lancer : ${serviceTitle}`;
@@ -393,13 +304,12 @@
             choiceModal.style.display = 'none';
         }
 
-        function showWebFormUnavailable() {
-            closeChoiceModal();
-            showToast("Ce formulaire n'est pas encore disponible. Veuillez réessayer plus tard.", 'warning');
+        function showWebForm() {
+            window.location.href = `${window.location.origin}/form/${selectedServiceKey}`;
         }
-
+        
         function redirectToWhatsApp() {
-            const phoneNumber = '24107883106'; // Numéro sans '+' ou caractères spéciaux
+            const phoneNumber = '24107883106'; 
             const message = `Bonjour, je souhaite commencer la démarche pour le service : ${selectedServiceTitle}`;
             const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
             window.open(whatsappUrl, '_blank');
@@ -422,13 +332,11 @@
 
         // --- Event Listeners ---
         searchButton.addEventListener('click', handleSearch);
-        searchInput.addEventListener('keypress', function(event) {
-            if (event.key === 'Enter') {
-                handleSearch();
-            }
+        searchInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') handleSearch();
         });
 
-        document.getElementById('webformBtn').addEventListener('click', showWebFormUnavailable);
+        document.getElementById('webformBtn').addEventListener('click', showWebForm);
         document.getElementById('whatsappBtn').addEventListener('click', redirectToWhatsApp);
 
         const mobileMenuButton = document.getElementById('mobile-menu-button');

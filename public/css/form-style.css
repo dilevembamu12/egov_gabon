@@ -1,0 +1,49 @@
+/* --- Variables & Reset (Thème Gabon) --- */
+:root {
+    --primary-color: #0033A0; /* Bleu du drapeau Gabonais */
+    --secondary-color: #009E60; /* Vert du drapeau Gabonais */
+    --gold-color: #FCD116;      /* Jaune/Or du drapeau Gabonais */
+    --success-color: #009E60;
+    --error-color: #e74c3c;
+    --warning-color: #FCD116;
+    --light-gray: #f4f7f9;
+    --dark-gray: #2c3e50;
+    --border-color: #30363d; /* Bordure sombre pour le thème */
+}
+
+/* Base body styles for dark theme */
+body { font-family: 'Inter', sans-serif; background-color: #0d1117; color: #c9d1d9; }
+
+/* Form Styling */
+.form-label { color: #a0aec0; }
+.form-input, .form-select, .form-textarea { background-color: #010409; border: 1px solid var(--border-color); color: #e2e8f0; transition: border-color 0.2s, box-shadow 0.2s; }
+.form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(0, 51, 160, 0.4); }
+.btn-primary { background-color: var(--primary-color); color: white; transition: background-color 0.3s; }
+.btn-primary:hover { background-color: #002269; } /* Bleu plus foncé */
+.btn-secondary { background-color: #30363d; color: white; transition: background-color 0.3s; }
+.btn-secondary:hover { background-color: #4a5568; }
+.form-card { background-color: #161b22; border: 1px solid var(--border-color); }
+
+/* Preview Placeholder */
+.placeholder { color: var(--primary-color); font-weight: 500; font-style: italic; opacity: 0.8; }
+
+/* Responsive Certificate Styles */
+.document-preview-card { background-color: #161b22; border: 1px solid var(--border-color); overflow-x: auto; }
+.certificate-container { background-color: white; color: #000; padding: 1cm; border: 1px solid #ddd; position: relative; min-width: 700px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+.certificate-border { border: 3px double var(--gold-color); padding: 1.5cm; display: flex; flex-direction: column; height: 100%; }
+.watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.08; pointer-events: none; width: 50%; height: auto; max-width: 300px; }
+.cert-header { text-align: center; line-height: 1.2; border-bottom: 2px solid var(--gold-color); padding-bottom: 0.5rem; }
+.cert-republic { font-family: 'EB Garamond', serif; font-weight: 700; font-size: 1.2rem; color: var(--secondary-color); letter-spacing: 0.1em; } /* Vert */
+.cert-ministry { font-family: 'Inter', sans-serif; font-size: 0.7rem; color: #555; }
+.cert-title { text-align: center; font-family: 'EB Garamond', serif; font-weight: 700; font-size: 2.2rem; margin: 1.5rem 0; color: var(--primary-color); } /* Bleu */
+.content-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem 2rem; flex-grow: 1; }
+.data-field { font-size: 0.9rem; padding-bottom: 0.5rem; border-bottom: 1px dotted #ccc; }
+.data-label { font-family: 'Inter', sans-serif; font-weight: 300; font-size: 0.7rem; color: #666; text-transform: uppercase; }
+.data-value { font-family: 'EB Garamond', serif; font-weight: 500; font-size: 1.1rem; color: #111; min-height: 1.5rem; }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .certificate-container { min-width: 600px; }
+    .content-grid { grid-template-columns: 1fr; }
+}
+
