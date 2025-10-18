@@ -129,39 +129,74 @@ app.get('/form/:serviceKey', (req, res) => {
 
 // --- ROUTES API (inchangées) ---
 app.post('/api/submissions', async (req, res) => {
-    const submissionData = req.body; // { service_title, wa_phoneNumber, etc. }
+    const submissionData = req.body;
 
-    /*
-    // Logique d'insertion (peut être dans une fonction séparée)
-    const sql = `INSERT INTO form_submissions (service_title, wa_phoneNumber, wa_name, form_json, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW())`;
-    const params = [
-        submissionData.service_title,
-        submissionData.wa_phoneNumber,
-        submissionData.wa_name,
-        JSON.stringify(submissionData.form_json),
-        submissionData.status || 'finalise'
-    ];
-    */
+    // 1. Validation des données entrantes
+    if (!submissionData.service_title || !submissionData.form_json) {
+        return res.status(400).json({ success: false, message: 'service_title et form_json sont requis.' });
+    }
+    
+    // 2. Déterminer la source et préparer les données
+    const isWhatsApp = submissionData.wa_phoneNumber && submissionData.wa_name;
+    const phoneNumber = isWhatsApp ? submissionData.wa_phoneNumber : 'Web Form';
+    const name = isWhatsApp ? submissionData.wa_name : 'Utilisateur Web';
+    const service_categorie = submissionData.service_categorie || 'Ministère des Transports'; // Catégorie par défaut
+    
+    let finalId;
+    let isNewEntry = false;
 
+    // 3. Logique "Trouver ou Créer" robuste
     try {
-        //const [result] = await dbPool.execute(sql, params);
-        const newId = submissionData.insertId;
+        const insertSql = `INSERT INTO form_submissions (service_categorie, service_title, wa_phoneNumber, wa_name, form_json, status) VALUES (?, ?, ?, ?, ?, ?)`;
+        const insertParams = [
+            service_categorie,
+            submissionData.service_title,
+            phoneNumber,
+            name,
+            JSON.stringify(submissionData.form_json),
+            submissionData.status || 'finalise'
+        ];
+        
+        const [result] = await dbPool.execute(insertSql, insertParams);
+        finalId = result.insertId;
+        isNewEntry = true; // C'est une nouvelle entrée
 
-        // Récupérer la ligne complète pour la diffuser
-        const [rows] = await dbPool.execute('SELECT * FROM form_submissions WHERE id = ?', [newId]);
-        const newSubmission = rows[0];
-
-        // Diffuser la nouvelle soumission à tous les clients du tableau de bord
-        if (newSubmission) {
-            broadcastNewSubmission(newSubmission);
-        }
-
-        res.status(201).json({ success: true, id: newId });
     } catch (error) {
-        console.error("Erreur lors de l'insertion de la soumission :", error);
-        res.status(500).json({ success: false, message: 'Erreur de base de données.' });
+        // Gérer l'erreur de doublon
+        if (error.code === 'ER_DUP_ENTRY') {
+            console.log('Doublon détecté. Récupération de l\'ID existant...');
+            const selectSql = `SELECT id FROM form_submissions WHERE service_categorie = ? AND service_title = ? AND wa_phoneNumber = ?`;
+            const selectParams = [service_categorie, submissionData.service_title, phoneNumber];
+            const [rows] = await dbPool.execute(selectSql, selectParams);
+            if (rows.length > 0) {
+                finalId = rows[0].id;
+            } else {
+                // Ce cas est peu probable mais géré par sécurité
+                throw new Error('Impossible de récupérer l\'ID du doublon.');
+            }
+        } else {
+            // Gérer les autres erreurs de base de données
+            console.error("Erreur lors de la soumission du formulaire :", error);
+            return res.status(500).json({ success: false, message: 'Erreur de base de données.' });
+        }
+    }
+
+    // 4. Diffuser au WebSocket et répondre
+    try {
+        if (finalId && isNewEntry) {
+            const [rows] = await dbPool.execute('SELECT * FROM form_submissions WHERE id = ?', [finalId]);
+            if (rows[0]) {
+                broadcastNewSubmission(rows[0]);
+            }
+        }
+        res.status(201).json({ success: true, id: finalId, is_new: isNewEntry });
+    } catch (broadcastError) {
+         console.error("Erreur lors de la diffusion WebSocket :", broadcastError);
+         // On renvoie quand même une réponse positive car l'insertion a réussi
+         res.status(201).json({ success: true, id: finalId, is_new: isNewEntry, warning: 'Erreur de diffusion WebSocket.' });
     }
 });
+
 
 app.post('/api/sync/:id', async (req, res) => {
     const { id } = req.params;

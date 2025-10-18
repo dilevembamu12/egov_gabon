@@ -103,57 +103,7 @@ export const servicesData = {
                 { id: 'marque', label: 'Marque du véhicule', type: 'text', required: true, exemple: 'Toyota', preview_id: 'preview-marque' },
                 { id: 'modele', label: 'Modèle du véhicule', type: 'text', required: true, exemple: 'Hilux', preview_id: 'preview-modele' },
                 { id: 'vin', label: 'Numéro de châssis (VIN, 17 caractères)', type: 'text', required: true, pattern: '^[A-HJ-NPR-Z0-9]{17}$', exemple: 'VF123456789ABCDEF', preview_id: 'preview-vin' },
-                { id: 'annee_circulation', label: 'Année de première mise en circulation', type: 'number', required: true, pattern: '^(19[8-9][0-9]|20[0-2][0-9])$', exemple: '2021', preview_id: 'preview-annee' },
-            ],
-            preview_html: `
-                <div class="cert-header"><p class="cert-republic">RÉPUBLIQUE GABONAISE</p><p class="cert-ministry">Ministère des Transports</p></div>
-                <h1 class="cert-title">CERTIFICAT D'IMMATRICULATION</h1>
-                <main class="content-grid">
-                    <div class="data-field col-span-2"><p class="data-label">Propriétaire</p><p id="preview-nom_proprietaire" class="data-value"><span class="placeholder">[Nom du Propriétaire]</span></p></div>
-                    <div class="data-field"><p class="data-label">N° CNI</p><p id="preview-cni" class="data-value"><span class="placeholder">[N° CNI]</span></p></div>
-                    <div class="data-field"><p class="data-label">Année</p><p id="preview-annee" class="data-value"><span class="placeholder">[Année]</span></p></div>
-                    <div class="data-field"><p class="data-label">Marque</p><p id="preview-marque" class="data-value"><span class="placeholder">[Marque]</span></p></div>
-                    <div class="data-field"><p class="data-label">Modèle</p><p id="preview-modele" class="data-value"><span class="placeholder">[Modèle]</span></p></div>
-                    <div class="data-field col-span-2"><p class="data-label">Numéro de Châssis (VIN)</p><p id="preview-vin" class="data-value"><span class="placeholder">[Numéro de châssis]</span></p></div>
-                </main>
-            `
-        }
-    },
-    'paiement-vignette': {
-        categoryKey: 'transports_mobilite',
-        icon: 'fa-sticky-note', color: '#2ecc71', title: 'Paiement Vignette', desc: 'Payez en ligne votre taxe annuelle de circulation automobile.',
-        form: {
-            title: 'Paiement de la Vignette Automobile',
-            icon: 'fa-sticky-note',
-            fields: [
-                { id: 'immatriculation', label: 'Numéro d\'immatriculation du véhicule', type: 'text', required: true, exemple: 'AB-123-CD', preview_id: 'preview-immatriculation' },
-                { id: 'vin', label: '4 derniers chiffres du Numéro de châssis (VIN)', type: 'text', required: true, pattern: '^[A-HJ-NPR-Z0-9]{4}$', exemple: 'CDEF', preview_id: 'preview-vin_partiel' },
-                { id: 'annee_vignette', label: 'Année de la vignette', type: 'number', required: true, pattern: '^20[2-9][0-9]$', exemple: '2025', preview_id: 'preview-annee_vignette' },
-            ],
-            preview_html: `
-                <div class="cert-header"><p class="cert-republic">RÉPUBLIQUE GABONAISE</p><p class="cert-ministry">Direction Générale des Impôts</p></div>
-                <h1 class="cert-title">REÇU DE PAIEMENT - VIGNETTE <span id="preview-annee_vignette">[Année]</span></h1>
-                <main class="content-grid">
-                    <div class="data-field col-span-2"><p class="data-label">N° Immatriculation</p><p id="preview-immatriculation" class="data-value"><span class="placeholder">[Immatriculation]</span></p></div>
-                    <div class="data-field col-span-2"><p class="data-label">VIN (partiel)</p><p id="preview-vin_partiel" class="data-value"><span class="placeholder">[XXXX]</span></p></div>
-                    <div class="data-field col-span-2"><p class="data-label">Statut</p><p class="data-value" style="color: green; font-weight: bold;">PAYÉ</p></div>
-                </main>
-            `
-        }
-    },
-    'immatriculation-vehicule': {
-        categoryKey: 'transports_mobilite',
-        icon: 'fa-car', color: 'green', title: 'Immatriculation Véhicule', desc: 'Obtenez la première carte grise pour un véhicule neuf ou importé.',
-        form: {
-            title: 'Immatriculation d\'un Véhicule',
-            icon: 'fa-car',
-            fields: [
-                { id: 'nom_proprietaire', label: 'Nom complet du propriétaire', type: 'text', required: true, exemple: 'Mba Obame Pierre', preview_id: 'preview-nom_proprietaire' },
-                { id: 'cni', label: 'Numéro de CNI du propriétaire', type: 'text', required: true, pattern: '^[0-9]{10}$', exemple: '0102123456', preview_id: 'preview-cni' },
-                { id: 'marque', label: 'Marque du véhicule', type: 'text', required: true, exemple: 'Toyota', preview_id: 'preview-marque' },
-                { id: 'modele', label: 'Modèle du véhicule', type: 'text', required: true, exemple: 'Hilux', preview_id: 'preview-modele' },
-                { id: 'vin', label: 'Numéro de châssis (VIN, 17 caractères)', type: 'text', required: true, pattern: '^[A-HJ-NPR-Z0-9]{17}$', exemple: 'VF123456789ABCDEF', preview_id: 'preview-vin' },
-                { id: 'annee_circulation', label: 'Année de première mise en circulation', type: 'number', required: true, pattern: '^(19[8-9][0-9]|20[0-2][0-9])$', exemple: '2021', preview_id: 'preview-annee' },
+                { id: 'annee_circulation', label: 'Année de première mise en circulation', type: 'number', required: true, pattern: '^(19[5-9][0-9]|20[0-9]{2})$', exemple: '2021', preview_id: 'preview-annee' },
                 { id: 'telephone', label: 'Numéro de téléphone de contact', type: 'tel', required: true, pattern: '^(061|062|065|066|074|077)[0-9]{6}$', exemple: '077123456', preview_id: 'preview-telephone' },
                 { id: 'email', label: 'Adresse e-mail (Optionnel)', type: 'email', required: false, exemple: 'pierre.mba@email.com', preview_id: 'preview-email' },
             ],
@@ -170,6 +120,28 @@ export const servicesData = {
                     <div class="data-field"><p class="data-label">Téléphone</p><p id="preview-telephone" class="data-value"><span class="placeholder">[Téléphone]</span></p></div>
                     <div class="data-field"><p class="data-label">Email</p><p id="preview-email" class="data-value"><span class="placeholder">[Email]</span></p></div>
                 </main>`
+        }
+    },
+    'paiement-vignette': {
+        categoryKey: 'transports_mobilite',
+        icon: 'fa-sticky-note', color: '#2ecc71', title: 'Paiement Vignette', desc: 'Payez en ligne votre taxe annuelle de circulation automobile.',
+        form: {
+            title: 'Paiement de la Vignette Automobile',
+            icon: 'fa-sticky-note',
+            fields: [
+                { id: 'immatriculation', label: 'Numéro d\'immatriculation du véhicule', type: 'text', required: true, exemple: 'AB-123-CD', preview_id: 'preview-immatriculation' },
+                { id: 'vin', label: '4 derniers chiffres du Numéro de châssis (VIN)', type: 'text', required: true, pattern: '^[A-HJ-NPR-Z0-9]{4}$', exemple: 'CDEF', preview_id: 'preview-vin_partiel' },
+                { id: 'annee_vignette', label: 'Année de la vignette', type: 'number', required: true, pattern: '^(202[4-9]|203[0-9])$', exemple: '2025', preview_id: 'preview-annee_vignette' },
+            ],
+            preview_html: `
+                <div class="cert-header"><p class="cert-republic">RÉPUBLIQUE GABONAISE</p><p class="cert-ministry">Direction Générale des Impôts</p></div>
+                <h1 class="cert-title">REÇU DE PAIEMENT - VIGNETTE <span id="preview-annee_vignette">[Année]</span></h1>
+                <main class="content-grid">
+                    <div class="data-field col-span-2"><p class="data-label">N° Immatriculation</p><p id="preview-immatriculation" class="data-value"><span class="placeholder">[Immatriculation]</span></p></div>
+                    <div class="data-field col-span-2"><p class="data-label">VIN (partiel)</p><p id="preview-vin_partiel" class="data-value"><span class="placeholder">[XXXX]</span></p></div>
+                    <div class="data-field col-span-2"><p class="data-label">Statut</p><p class="data-value" style="color: green; font-weight: bold;">PAYÉ</p></div>
+                </main>
+            `
         }
     },
     'renouvellement-carte-grise': {

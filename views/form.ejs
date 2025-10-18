@@ -11,7 +11,25 @@
     <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
+    <!-- NOUVEAU : SweetAlert2 pour des alertes modernes -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <link rel="stylesheet" href="/css/form-style.css">
+    
+    <style>
+        /* Style personnalisé pour SweetAlert en thème sombre */
+        .swal2-popup {
+            background-color: #161b22 !important;
+            color: #c9d1d9 !important;
+            border: 1px solid #30363d;
+        }
+        .swal2-title {
+            color: #ffffff !important;
+        }
+        .swal2-html-container {
+             color: #c9d1d9 !important;
+        }
+    </style>
 </head>
 <body class="antialiased">
 
@@ -28,7 +46,6 @@
                 <div class="certificate-container">
                     <img src="/img/coat_of_arms.jpg" class="watermark" alt="Armoiries du Gabon">
                     <div class="certificate-border">
-                        <!-- Le squelette de l'aperçu sera injecté ici -->
                         <%- service.preview_html %>
                     </div>
                 </div>
@@ -36,9 +53,9 @@
 
             <!-- Form Section -->
             <div class="form-card w-full lg:w-2/5 rounded-lg p-6 sm:p-8">
-                <form id="dynamic-form">
+                <form id="dynamic-form" novalidate>
                     <% service.fields.forEach(field => { %>
-                        <div class="mb-6">
+                        <div class="mb-4">
                             <label for="<%= field.id %>" class="form-label block mb-2 text-sm font-medium">
                                 <%= field.label %>
                                 <% if (field.required) { %><span class="text-red-500">*</span><% } %>
@@ -53,8 +70,9 @@
                             <% } else if (field.type === 'textarea') { %>
                                 <textarea id="<%= field.id %>" name="<%= field.id %>" rows="4" class="form-textarea w-full p-2.5 rounded-md" placeholder="<%= field.exemple || '' %>" data-target="<%= field.preview_id %>" <%= field.required ? 'required' : '' %>></textarea>
                             <% } else { %>
-                                <input type="<%= field.type %>" id="<%= field.id %>" name="<%= field.id %>" class="form-input w-full p-2.5 rounded-md" placeholder="<%= field.exemple || '' %>" data-target="<%= field.preview_id %>" <%= field.required ? 'required' : '' %> <%= field.pattern ? `pattern="${field.pattern}"` : '' %>>
+                                <input type="<%= field.type %>" id="<%= field.id %>" name="<%= field.id %>" class="form-input w-full p-2.5 rounded-md" placeholder="<%= field.exemple || '' %>" data-target="<%= field.preview_id %>" <%= field.required ? 'required' : '' %> <%= field.pattern ? `data-pattern="${field.pattern}"` : '' %>>
                             <% } %>
+                            <div class="error-message text-red-400 text-sm mt-1"></div>
                         </div>
                     <% }); %>
                     <div class="mt-8 pt-6 border-t border-gray-700 flex justify-end gap-4">
@@ -68,16 +86,14 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // --- Logique de prévisualisation (inchangée) ---
             const allInputs = document.querySelectorAll('.form-card input, .form-card select, .form-card textarea');
-            
             allInputs.forEach(input => {
                 input.addEventListener('input', () => {
                     const targetId = input.dataset.target;
                     const previewElement = document.getElementById(targetId);
-
                     if (previewElement) {
                         let value = input.value;
-                        
                         if (value) {
                              if (previewElement.firstChild?.classList?.contains('placeholder')) {
                                 previewElement.innerHTML = ''; 
@@ -99,6 +115,103 @@
                         }
                     }
                 });
+            });
+
+
+            // --- Logique de soumission de formulaire (AVEC SWEETALERT) ---
+            const form = document.getElementById('dynamic-form');
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                // --- Logique de validation personnalisée (inchangée) ---
+                let isFormValid = true;
+                const inputsToValidate = form.querySelectorAll('input, select, textarea');
+                inputsToValidate.forEach(input => {
+                    input.classList.remove('border-red-500');
+                    const errorDiv = input.nextElementSibling;
+                    if (errorDiv && errorDiv.classList.contains('error-message')) errorDiv.textContent = '';
+                });
+                for (const input of inputsToValidate) {
+                    const errorDiv = input.nextElementSibling;
+                    let isValid = true;
+                    if (input.required && !input.value.trim()) {
+                        isValid = false;
+                        if (errorDiv) errorDiv.textContent = 'Ce champ est obligatoire.';
+                    }
+                    const pattern = input.getAttribute('data-pattern');
+                    if (isValid && pattern && input.value.trim()) {
+
+                        let cleanPattern = pattern.trim();
+                        // On retire les guillemets simples ou doubles au début et à la fin s'ils existent
+                        if ((cleanPattern.startsWith('"') && cleanPattern.endsWith('"')) || (cleanPattern.startsWith("'") && cleanPattern.endsWith("'"))) {
+                            cleanPattern = cleanPattern.substring(1, cleanPattern.length - 1);
+                        }
+
+                        const regex = new RegExp(cleanPattern);
+                        if (!regex.test(input.value)) {
+                            isValid = false;
+                            if (errorDiv) errorDiv.textContent = `Format invalide. Exemple : ${input.placeholder}`;
+                        }
+                    }
+                    if (!isValid) {
+                        isFormValid = false;
+                        input.classList.add('border-red-500');
+                    }
+                }
+                if (!isFormValid) return;
+                
+                // --- Logique de soumission ---
+                const submitButton = form.querySelector('button[type="submit"]');
+                const originalButtonContent = submitButton.innerHTML;
+                submitButton.disabled = true;
+                submitButton.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i>Soumission...`;
+
+                const formData = new FormData(form);
+                const formJson = Object.fromEntries(formData.entries());
+                const payload = {
+                    service_title: '<%= service.title %>',
+                    form_json: formJson
+                };
+
+                try {
+                    const response = await fetch('/api/submissions', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                    });
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.message || 'Une erreur inconnue est survenue.');
+
+                    // ALERTE DE SUCCÈS
+                    Swal.fire({
+                        title: 'Succès !',
+                        text: 'Votre demande a été soumise avec succès. Vous allez être redirigé vers la page d\'accueil.',
+                        icon: 'success',
+                        background: '#161b22',
+                        color: '#c9d1d9',
+                        confirmButtonColor: '#4a90e2',
+                        timer: 3000,
+                        timerProgressBar: true,
+                        willClose: () => {
+                            window.location.href = '/';
+                        }
+                    });
+
+                } catch (error) {
+                    console.error('Erreur:', error);
+                    // ALERTE D'ERREUR
+                    Swal.fire({
+                        title: 'Échec de la soumission',
+                        text: error.message,
+                        icon: 'error',
+                        background: '#161b22',
+                        color: '#c9d1d9',
+                        confirmButtonText: 'Réessayer',
+                        confirmButtonColor: '#e74c3c',
+                    });
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalButtonContent;
+                }
             });
         });
     </script>
