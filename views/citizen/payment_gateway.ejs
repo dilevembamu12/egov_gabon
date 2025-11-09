@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paiement d'Infraction</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/citizen-style.css"> <!-- LIEN CSS CORRIGÉ -->
+    
+    <!-- NOUVEAU : SweetAlert2 pour des alertes modernes -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        :root {
+            --couleur-verte: #009E60;
+            --couleur-jaune: #FCD116;
+            --couleur-bleue: #0033A0;
+        }
+        /* Style personnalisé pour SweetAlert en thème sombre (adapté) */
+        .swal2-popup {
+            background-color: #ffffff !important;
+            color: #333 !important;
+        }
+        .swal2-title {
+            color: #2c3e50 !important;
+        }
+        .swal2-html-container {
+             color: #333 !important;
+        }
+        /* Style pour l'icône de chargement */
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, .1);
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border-left-color: white;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+
+    <div class="w-full max-w-lg">
+        <div class="bg-white shadow-xl rounded-xl p-8">
+            <div class="flex flex-col items-center mb-6">
+                <img src="/img/coat_of_arms.jpg" alt="Armoiries du Gabon" class="h-20 w-auto mb-4">
+                <h2 class="text-2xl font-bold text-center text-gray-900">Finaliser le Paiement</h2>
+            </div>
+            
+            <div class="border-t border-b divide-y divide-gray-200 mb-6">
+                <div class="py-4 flex justify-between">
+                    <span class="text-gray-600">Service</span>
+                    <span class="font-semibold text-gray-900"><%= infraction.type.nom %></span>
+                </div>
+                <div class="py-4 flex justify-between">
+                    <span class="text-gray-600">Plaque d'immatriculation</span>
+                    <span class="font-semibold text-gray-900"><%= infraction.plaque_immatriculation %></span>
+                </div>
+                <div class="py-4 flex justify-between">
+                    <span class="text-gray-600">Montant à payer</span>
+                    <span class="font-bold text-2xl text-[var(--couleur-bleue)]"><%= parseFloat(infraction.montant_actuel).toLocaleString('fr-FR') %> XAF</span>
+                </div>
+            </div>
+
+            <p class="text-center text-sm text-gray-500 mb-4">Ceci est une simulation. Choisissez une méthode de paiement pour finaliser la transaction.</p>
+
+            <!-- CORRECTION : classs -> class -->
+            <div class="space-y-4">
+                <button id="mobileMoneyBtn" onclick="simulatePayment('mobile_money')" class="w-full mb-3 px-4 py-3 font-semibold text-white bg-orange-500 rounded-md hover:bg-opacity-90 transition-colors flex items-center justify-center disabled:opacity-70">
+                    <span class="icon mr-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.789 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725 1.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
+                    </span>
+                    <span class="btn-text">Payer avec Mobile Money</span>
+                </button>
+                <button id="cardBtn" onclick="simulatePayment('carte_bancaire')" class="w-full px-4 py-3 font-semibold text-white bg-[var(--couleur-bleue)] rounded-md hover:bg-opacity-90 transition-colors flex items-center justify-center disabled:opacity-70">
+                    <span class="icon mr-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v4a1 1 0 01-1 1H4a1 1 0 01-1-1v-4zM14 9a1 1 0 00-1 1v4a1 1 0 001 1h2a1 1 0 001-1v-4a1 1 0 00-1-1h-2z" /></svg>
+                    </span>
+                    <span class="btn-text">Payer par Carte Bancaire</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const mobileMoneyBtn = document.getElementById('mobileMoneyBtn');
+        const cardBtn = document.getElementById('cardBtn');
+
+        // Fonction pour gérer l'état de chargement des boutons
+        function setLoading(isLoading, btn) {
+            const otherBtn = (btn === mobileMoneyBtn) ? cardBtn : mobileMoneyBtn;
+            const btnText = btn.querySelector('.btn-text');
+            const icon = btn.querySelector('.icon');
+
+            if (isLoading) {
+                // Sauvegarder le texte original
+                btn.dataset.originalText = btnText.textContent;
+                
+                // Cacher l'icône et afficher un spinner
+                icon.style.display = 'none';
+                if (!btn.querySelector('.spinner')) {
+                    const spinner = document.createElement('div');
+                    spinner.className = 'spinner mr-2';
+                    btn.prepend(spinner);
+                }
+                
+                btnText.textContent = 'Traitement...';
+                btn.disabled = true;
+                otherBtn.disabled = true;
+            } else {
+                // Restaurer le bouton
+                btnText.textContent = btn.dataset.originalText;
+                const spinner = btn.querySelector('.spinner');
+                if (spinner) spinner.remove();
+                icon.style.display = 'inline';
+
+                btn.disabled = false;
+                otherBtn.disabled = false;
+            }
+        }
+
+        async function simulatePayment(methode) {
+            const infractionId = <%= infraction.id %>;
+            const currentBtn = (methode === 'mobile_money') ? mobileMoneyBtn : cardBtn;
+
+            setLoading(true, currentBtn);
+
+            try {
+                // 1. Affiche l'alerte de chargement
+                Swal.fire({
+                    title: 'Simulation de Paiement',
+                    text: 'Connexion à la passerelle sécurisée...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // 2. Simule le temps de réponse de la passerelle
+                await new Promise(resolve => setTimeout(resolve, 2500));
+
+                // 3. Appelle le webhook
+                const response = await fetch('/api/payment/webhook', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        infractionId: infractionId,
+                        methode: methode
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.message || 'Le service de paiement a échoué.');
+                }
+
+                // 4. Affiche le succès
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Paiement Réussi !',
+                    text: 'Votre infraction a été payée. Vous allez être redirigé.',
+                    timer: 3000,
+                    timerProgressBar: true,
+                    willClose: () => {
+                        window.location.href = '/citizen/dashboard';
+                    }
+                });
+
+            } catch (error) {
+                console.error('Erreur:', error);
+                // 5. Affiche l'échec
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Échec du Paiement',
+                    text: error.message || 'Une erreur de connexion est survenue.',
+                    confirmButtonColor: '#e74c3c'
+                });
+                setLoading(false, currentBtn); // Réactive les boutons uniquement en cas d'échec
+            }
+        }
+    </script>
+
+</body>
+</html>

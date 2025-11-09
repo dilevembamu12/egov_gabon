@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
-    <!-- NOUVEAU : SweetAlert2 pour des alertes modernes -->
+    <!-- SweetAlert2 pour des alertes modernes -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <link rel="stylesheet" href="/css/form-style.css">
@@ -28,6 +28,21 @@
         }
         .swal2-html-container {
              color: #c9d1d9 !important;
+        }
+        /* Style pour les champs en erreur */
+        .form-input.border-red-500,
+        .form-select.border-red-500,
+        .form-textarea.border-red-500 {
+            border-color: #e53e3e; /* Rouge pour les erreurs */
+        }
+        .form-input.border-red-500:focus,
+        .form-select.border-red-500:focus,
+        .form-textarea.border-red-500:focus {
+            border-color: #e53e3e;
+            box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.4);
+        }
+        .error-message {
+            min-height: 1.25rem; /* Empêche le décalage de la mise en page */
         }
     </style>
 </head>
@@ -53,7 +68,7 @@
 
             <!-- Form Section -->
             <div class="form-card w-full lg:w-2/5 rounded-lg p-6 sm:p-8">
-                <form id="dynamic-form" novalidate>
+                <form id="dynamic-form" novalidate> <!-- novalidate désactive la validation par défaut -->
                     <% service.fields.forEach(field => { %>
                         <div class="mb-4">
                             <label for="<%= field.id %>" class="form-label block mb-2 text-sm font-medium">
@@ -86,7 +101,7 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- Logique de prévisualisation (inchangée) ---
+            // --- Logique de prévisualisation (WYSIWYG) ---
             const allInputs = document.querySelectorAll('.form-card input, .form-card select, .form-card textarea');
             allInputs.forEach(input => {
                 input.addEventListener('input', () => {
@@ -98,10 +113,12 @@
                              if (previewElement.firstChild?.classList?.contains('placeholder')) {
                                 previewElement.innerHTML = ''; 
                             }
-                            if (input.type === 'date') {
+                            if (input.type === 'date' && value) {
                                 try {
+                                    // Assure-toi que la date n'est pas vide avant de la formater
                                     const date = new Date(value);
-                                    previewElement.textContent = date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+                                    // Ajoute timeZone: 'UTC' pour éviter les décalages d'un jour
+                                    previewElement.textContent = date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
                                 } catch (e) {
                                     previewElement.textContent = value;
                                 }
@@ -115,52 +132,74 @@
                         }
                     }
                 });
+                
+                // Déclenche l'événement 'input' au chargement pour les champs pré-remplis (si nécessaire)
+                if(input.value) {
+                    input.dispatchEvent(new Event('input'));
+                }
             });
 
 
-            // --- Logique de soumission de formulaire (AVEC SWEETALERT) ---
+            // --- Logique de soumission de formulaire (AVEC SWEETALERT ET VALIDATION JS) ---
             const form = document.getElementById('dynamic-form');
             form.addEventListener('submit', async (event) => {
                 event.preventDefault();
 
-                // --- Logique de validation personnalisée (inchangée) ---
+                // --- Logique de validation personnalisée ---
                 let isFormValid = true;
                 const inputsToValidate = form.querySelectorAll('input, select, textarea');
+                
                 inputsToValidate.forEach(input => {
                     input.classList.remove('border-red-500');
                     const errorDiv = input.nextElementSibling;
                     if (errorDiv && errorDiv.classList.contains('error-message')) errorDiv.textContent = '';
                 });
+
                 for (const input of inputsToValidate) {
                     const errorDiv = input.nextElementSibling;
                     let isValid = true;
+                    
                     if (input.required && !input.value.trim()) {
                         isValid = false;
                         if (errorDiv) errorDiv.textContent = 'Ce champ est obligatoire.';
                     }
+                    
                     const pattern = input.getAttribute('data-pattern');
                     if (isValid && pattern && input.value.trim()) {
-
-                        let cleanPattern = pattern.trim();
-                        // On retire les guillemets simples ou doubles au début et à la fin s'ils existent
-                        if ((cleanPattern.startsWith('"') && cleanPattern.endsWith('"')) || (cleanPattern.startsWith("'") && cleanPattern.endsWith("'"))) {
-                            cleanPattern = cleanPattern.substring(1, cleanPattern.length - 1);
-                        }
-
-                        const regex = new RegExp(cleanPattern);
-                        if (!regex.test(input.value)) {
-                            isValid = false;
-                            if (errorDiv) errorDiv.textContent = `Format invalide. Exemple : ${input.placeholder}`;
+                        // Nettoyer la regex (enlever les / de début et fin si présents)
+                        let cleanPattern = pattern.startsWith('^') ? pattern : `^${pattern}$`;
+                        
+                        try {
+                            const regex = new RegExp(cleanPattern);
+                            if (!regex.test(input.value)) {
+                                isValid = false;
+                                if (errorDiv) errorDiv.textContent = `Format invalide. Exemple : ${input.placeholder}`;
+                            }
+                        } catch(e) {
+                            console.warn("Regex invalide sur le champ " + input.id, e);
                         }
                     }
+
                     if (!isValid) {
                         isFormValid = false;
                         input.classList.add('border-red-500');
                     }
                 }
-                if (!isFormValid) return;
+
+                if (!isFormValid) {
+                     Swal.fire({
+                        title: 'Formulaire Incomplet',
+                        text: 'Veuillez corriger les erreurs dans les champs en rouge.',
+                        icon: 'error',
+                        background: '#161b22',
+                        color: '#c9d1d9',
+                        confirmButtonText: 'Compris',
+                        confirmButtonColor: '#e74c3c',
+                    });
+                    return; // Stoppe la soumission
+                }
                 
-                // --- Logique de soumission ---
+                // --- Logique de soumission (si le formulaire est valide) ---
                 const submitButton = form.querySelector('button[type="submit"]');
                 const originalButtonContent = submitButton.innerHTML;
                 submitButton.disabled = true;
@@ -217,4 +256,3 @@
     </script>
 </body>
 </html>
-

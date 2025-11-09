@@ -1,0 +1,10 @@
+const path = require('path');
+
+// Ce fichier dit à sequelize-cli où trouver vos fichiers.
+// Il utilise .cjs pour la configuration !
+module.exports = {
+  'config': path.resolve('config', 'config.cjs'),
+  'models-path': path.resolve('models'),
+  'seeders-path': path.resolve('seeders'),
+  'migrations-path': path.resolve('migrations')
+};

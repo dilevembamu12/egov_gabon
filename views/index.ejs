@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>e-Gouv Gabon</title>
+</head>
+<body>
+    <h1><%= message %></h1>
+    <p>Le serveur fonctionne. Les modèles Sequelize sont prêts.</p>
+    <hr>
+    
+    <% if (locals.userAdmin) { %>
+        <p>Connecté en tant que : <%= userAdmin.username %> (<%= userAdmin.role %>) | <a href="/logout">Déconnexion Admin</a></p>
+        <a href="/admin/dashboard">Accès au Tableau de Bord Admin</a>
+    <% } else if (locals.userCitizen) { %>
+        <p>Connecté en tant que : <%= userCitizen.nom_complet %> | <a href="/logout">Déconnexion Citoyen</a></p>
+        <a href="/citizen/dashboard">Accès à mon Espace Citoyen</a>
+    <% } else { %>
+        <p><a href="/login">Accès à l'Espace Citoyen</a></p>
+        <p><a href="/admin/login">Accès à l'Espace Administration</a></p>
+    <% } %>
+    
+</body>
+</html>

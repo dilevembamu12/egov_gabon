@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/dashboard-style.css"> <!-- Correction du chemin vers le CSS -->
 </head>
 <body>
     <div class="container">
@@ -54,7 +54,7 @@
                             </tr>
                         <% }); %>
                     <% } else { %>
-                        <tr>
+                        <tr id="no-data-row">
                             <td colspan="8" class="no-data">Aucun formulaire n'a été enregistré pour le moment.</td>
                         </tr>
                     <% } %>
@@ -93,10 +93,9 @@
 
     <script>
         const modal = document.getElementById('viewModal');
-
         const tbody = document.getElementById('submissions-tbody');
 
-        // NOUVEAU : Références pour la modale de bienvenue et le son
+        // Références pour la modale de bienvenue et le son
         const welcomeModal = document.getElementById('welcomeModal');
         const okButton = document.getElementById('okButton');
         const notificationSound = document.getElementById('notification-sound');
@@ -109,29 +108,21 @@
 
         // Gère le clic sur le bouton "OK" de la modale de bienvenue
         okButton.addEventListener('click', () => {
-            // 1. C'est l'interaction utilisateur qui débloque l'audio pour le navigateur !
-            // On joue et on met en pause immédiatement pour ne pas entendre le son,
-            // mais pour obtenir la permission du navigateur.
+            // 1. Interaction utilisateur qui débloque l'audio
             notificationSound.play().then(() => {
                 notificationSound.pause();
-                notificationSound.currentTime = 0; // Rembobine pour la prochaine notification
+                notificationSound.currentTime = 0;
             }).catch(e => {
-                console.warn("L'audio n'a pas pu être débloqué. Une autre interaction pourrait être nécessaire.", e);
+                console.warn("L'audio n'a pas pu être débloqué.", e);
             });
-
-            // 2. On active les notifications sonores pour le reste de la session
             isAudioEnabled = true;
-            
-            // 3. On cache la fenêtre modale
             welcomeModal.style.display = 'none';
-
-            // Optionnel : Confirmer à l'utilisateur que c'est activé
             showToast("Notifications sonores activées.");
         });
 
-
         // --- GESTION DE LA CONNEXION WEBSOCKET ---
-        const ws = new WebSocket(`wss://${window.location.host}`);
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const ws = new WebSocket(`${wsProtocol}//${window.location.host}`);
 
         ws.onopen = () => {
             console.log('Connecté au serveur WebSocket.');
@@ -141,14 +132,13 @@
             const submission = JSON.parse(event.data);
             console.log('Nouvelle soumission reçue:', submission);
             
-            // 1. Ajouter la nouvelle ligne au tableau avec surbrillance
             prependNewSubmission(submission);
-            
-            // 2. Afficher la notification toast
             showToast(`Nouvelle soumission de ${submission.wa_name || 'N/A'} pour le service "${submission.service_title}"`);
             
-            // 3. Jouer le son de notification
-            document.getElementById('notification-sound').play().catch(e => console.error("La lecture auto du son a été bloquée par le navigateur:", e));
+            if(isAudioEnabled) {
+                notificationSound.currentTime = 0;
+                notificationSound.play().catch(e => console.error("La lecture auto du son a échoué:", e));
+            }
         };
 
         ws.onclose = () => {
@@ -159,7 +149,6 @@
         // --- FONCTIONS HELPERS ---
 
         function prependNewSubmission(submission) {
-            // Supprimer la ligne "Aucune donnée" si elle existe
             const noDataRow = document.getElementById('no-data-row');
             if (noDataRow) {
                 noDataRow.remove();
@@ -167,9 +156,8 @@
 
             const newRow = document.createElement('tr');
             newRow.id = `row-${submission.id}`;
-            newRow.classList.add('new-submission'); // Classe pour la surbrillance
+            newRow.classList.add('new-submission'); 
 
-            // Convertir les données JSON en objet si c'est une chaîne
             let formJson = submission.form_json;
             if(typeof formJson === 'string') {
                 try { formJson = JSON.parse(formJson); } catch(e) { formJson = {"Erreur": "JSON Invalide"}; }
@@ -200,7 +188,6 @@
 
             tbody.insertBefore(newRow, tbody.firstChild);
 
-            // Supprimer la classe de surbrillance après 5 secondes
             setTimeout(() => {
                 newRow.classList.remove('new-submission');
             }, 5000);
@@ -217,23 +204,16 @@
                 toast.classList.remove('show');
                 toast.classList.add('hide');
                 toast.addEventListener('transitionend', () => toast.remove());
-            }, 4000); // La notification disparaît après 4 secondes
+            }, 4000);
         }
 
-
-        // --- GESTION DE LA MODALE "VOIR" (AMÉLIORÉE) ---
+        // --- GESTION DE LA MODALE "VOIR" ---
         function viewSubmission(button) {
-            // 1. Récupérer la chaîne de caractères encodée
             const encodedString = button.getAttribute('data-form');
-
-            // 2. Décoder la chaîne en remplaçant &quot; par "
             const decodedString = encodedString.replace(/&quot;/g, '"');
-            
-            // 3. Parser la chaîne maintenant correcte
             const formData = JSON.parse(decodedString);
-
-            // Le reste de la fonction est inchangé
             const serviceTitle = button.getAttribute('data-title');
+            
             const modalTitle = document.getElementById('modalTitle');
             const modalBody = document.getElementById('modalBody');
 
@@ -266,7 +246,6 @@
 
         // --- GESTION DU BOUTON "SYNCHRONISER" ---
         async function syncSubmission(button, submissionId) {
-            // ... (Cette fonction reste identique)
             const btnText = button.querySelector('.btn-text');
             const icon = button.querySelector('i');
             const row = document.getElementById(`row-${submissionId}`);
@@ -313,4 +292,3 @@
     </script>
 </body>
 </html>
-

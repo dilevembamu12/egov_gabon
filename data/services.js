@@ -87,6 +87,34 @@ export const servicesData = {
             `
         }
     },
+    'autorisation-sortie': { // SERVICE AJOUTÉ
+        categoryKey: 'etat_civil_citoyennete',
+        icon: 'fa-plane-departure', color: '#8e44ad', title: 'Autorisation de Sortie', desc: 'Autorisation de sortie du territoire pour mineur.',
+        form: {
+            title: 'Autorisation de Sortie (Mineur)',
+            icon: 'fa-plane-departure',
+            fields: [
+                { id: 'nom_parent', label: 'Nom complet du parent / tuteur légal', type: 'text', required: true, preview_id: 'preview-nom_parent' },
+                { id: 'cni_parent', label: 'N° CNI du parent / tuteur', type: 'text', required: true, pattern: '^[0-9]{10}$', preview_id: 'preview-cni_parent' },
+                { id: 'nom_mineur', label: 'Nom complet du mineur', type: 'text', required: true, preview_id: 'preview-nom_mineur' },
+                { id: 'cni_mineur', label: 'N° CNI ou Acte de Naissance du mineur', type: 'text', required: true, preview_id: 'preview-cni_mineur' },
+                { id: 'destination', label: 'Pays de destination', type: 'text', required: true, exemple: 'France', preview_id: 'preview-destination' },
+                { id: 'date_sortie', label: 'Date de sortie prévue', type: 'date', required: true, preview_id: 'preview-date_sortie' },
+            ],
+            preview_html: `
+                <div class="cert-header"><p class="cert-republic">RÉPUBLIQUE GABONAISE</p><p class="cert-ministry">Direction Générale de la Documentation et de l'Immigration (DGDI)</p></div>
+                <h1 class="cert-title">AUTORISATION DE SORTIE DE TERRITOIRE (MINEUR)</h1>
+                <main class="content-grid">
+                    <div class="data-field col-span-2"><p class="data-label">Parent / Tuteur Légal</p><p id="preview-nom_parent" class="data-value"><span class="placeholder">[Nom du parent]</span></p></div>
+                    <div class="data-field col-span-2"><p class="data-label">N° CNI Parent</p><p id="preview-cni_parent" class="data-value"><span class="placeholder">[CNI Parent]</span></p></div>
+                    <div class="data-field col-span-2"><p class="data-label">Mineur Concerné</p><p id="preview-nom_mineur" class="data-value"><span class="placeholder">[Nom du mineur]</span></p></div>
+                    <div class="data-field col-span-2"><p class="data-label">N° Pièce Mineur</p><p id="preview-cni_mineur" class="data-value"><span class="placeholder">[Pièce Mineur]</span></p></div>
+                    <div class="data-field"><p class="data-label">Destination</p><p id="preview-destination" class="data-value"><span class="placeholder">[Pays]</span></p></div>
+                    <div class="data-field"><p class="data-label">Date de Sortie</p><p id="preview-date_sortie" class="data-value"><span class="placeholder">[Date]</span></p></div>
+                </main>
+            `
+        }
+    },
 
     //======================================================================
     // CATEGORY: Transports et Mobilité
@@ -604,4 +632,3 @@ export const servicesData = {
         }
     }
 };
-
