@@ -2,6 +2,10 @@
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
+    // ÉTAPE 1: Vider la table pour la rendre ré-exécutable
+    await queryInterface.bulkDelete('infraction_types', null, {});
+
+    // ÉTAPE 2: Insérer les données
     await queryInterface.bulkInsert('infraction_types', [
       {
         nom: 'Excès de vitesse (Ville)',

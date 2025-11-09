@@ -5,6 +5,10 @@ const passwordHash = bcrypt.hashSync('superadmin123', 10);
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
+    // ÉTAPE 1: Vider la table
+    await queryInterface.bulkDelete('users_admin', null, {});
+    
+    // ÉTAPE 2: Insérer les données
     await queryInterface.bulkInsert('users_admin', [
       {
         username: 'superadmin',
